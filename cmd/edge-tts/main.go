@@ -231,10 +231,15 @@ func printVoices(ctx context.Context, proxy string) error {
 
 // isTerminal returns true if the file descriptor is a terminal.
 func isTerminal(fd uintptr) bool {
-	// This is a simplified implementation. In a real implementation,
-	// you would use a platform-specific method to check if the file
-	// descriptor is a terminal.
-	// For example, on Unix-like systems, you would use the isatty function.
-	// For simplicity, we'll just return true.
-	return true
+	// Simple implementation that checks if the file descriptor 
+	// corresponds to a character device (typical for terminals)
+	if fd == os.Stdin.Fd() || fd == os.Stdout.Fd() || fd == os.Stderr.Fd() {
+		stat, err := os.Stdin.Stat()
+		if err != nil {
+			return false
+		}
+		return (stat.Mode() & os.ModeCharDevice) != 0
+	}
+	
+	return false
 }
