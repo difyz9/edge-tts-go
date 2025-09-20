@@ -3,6 +3,7 @@ package submaker
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -11,7 +12,9 @@ import (
 
 // SubMaker is used to generate subtitles from WordBoundary and SentenceBoundary messages.
 type SubMaker struct {
-	cues []Subtitle
+	subtitles []Subtitle
+	current   *Subtitle
+	index    int
 }
 
 // Subtitle represents a subtitle cue.
@@ -25,7 +28,8 @@ type Subtitle struct {
 // NewSubMaker creates a new SubMaker.
 func NewSubMaker() *SubMaker {
 	return &SubMaker{
-		cues: []Subtitle{},
+		subtitles: make([]Subtitle, 0),
+		index:     1,
 	}
 }
 
@@ -35,12 +39,26 @@ func (sm *SubMaker) Feed(msg types.TTSChunk) error {
 		return fmt.Errorf("invalid message type, expected 'WordBoundary' or 'SentenceBoundary', got '%s'", msg.Type)
 	}
 
-	sm.cues = append(sm.cues, Subtitle{
-		Index:   len(sm.cues) + 1,
-		Start:   time.Duration(msg.Offset / 10) * time.Microsecond,
-		End:     time.Duration((msg.Offset + msg.Duration) / 10) * time.Microsecond,
-		Content: msg.Text,
-	})
+	offset := time.Duration(msg.Offset * float64(time.Nanosecond))
+	duration := time.Duration(msg.Duration * float64(time.Nanosecond))
+
+	if sm.current == nil {
+		sm.current = &Subtitle{
+			Index:   sm.index,
+			Start:   offset,
+			Content: msg.Text,
+		}
+		sm.index++
+	} else {
+		sm.current.End = offset + duration
+		sm.current.Content += msg.Text
+	}
+
+	// For SentenceBoundary, finalize the current subtitle
+	if msg.Type == "SentenceBoundary" {
+		sm.subtitles = append(sm.subtitles, *sm.current)
+		sm.current = nil
+	}
 
 	return nil
 }
@@ -51,14 +69,14 @@ func (sm *SubMaker) MergeCues(words int) error {
 		return fmt.Errorf("invalid number of words to merge, expected > 0, got %d", words)
 	}
 
-	if len(sm.cues) == 0 {
+	if len(sm.subtitles) == 0 {
 		return nil
 	}
 
 	newCues := []Subtitle{}
-	currentCue := sm.cues[0]
+	currentCue := sm.subtitles[0]
 
-	for _, cue := range sm.cues[1:] {
+	for _, cue := range sm.subtitles[1:] {
 		if len(strings.Fields(currentCue.Content)) < words {
 			currentCue.End = cue.End
 			currentCue.Content = currentCue.Content + " " + cue.Content
@@ -75,15 +93,31 @@ func (sm *SubMaker) MergeCues(words int) error {
 		newCues[i].Index = i + 1
 	}
 
-	sm.cues = newCues
+	sm.subtitles = newCues
 	return nil
 }
 
 // GetSRT returns the SRT formatted subtitles from the SubMaker.
 func (sm *SubMaker) GetSRT() string {
+	// Finalize any pending subtitle
+	if sm.current != nil {
+		sm.subtitles = append(sm.subtitles, *sm.current)
+		sm.current = nil
+	}
+
+	// Sort subtitles by start time
+	sort.Slice(sm.subtitles, func(i, j int) bool {
+		return sm.subtitles[i].Start < sm.subtitles[j].Start
+	})
+
+	// Reindex
+	for i := range sm.subtitles {
+		sm.subtitles[i].Index = i + 1
+	}
+
 	var sb strings.Builder
 
-	for _, cue := range sm.cues {
+	for _, cue := range sm.subtitles {
 		// Format: "00:00:00,000 --> 00:00:00,000"
 		startStr := formatDuration(cue.Start)
 		endStr := formatDuration(cue.End)

@@ -151,7 +151,7 @@ func (vm *VoicesManager) Create(ctx context.Context, customVoices []types.Voice,
 }
 
 // Find finds all matching voices based on the provided attributes.
-func (vm *VoicesManager) Find(gender, locale, language string) ([]types.VoicesManagerVoice, error) {
+func (vm *VoicesManager) Find(criteria VoicesManagerFind) ([]types.VoicesManagerVoice, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
@@ -161,9 +161,9 @@ func (vm *VoicesManager) Find(gender, locale, language string) ([]types.VoicesMa
 
 	var matchingVoices []types.VoicesManagerVoice
 	for _, voice := range vm.voices {
-		if (gender == "" || voice.Gender == gender) &&
-			(locale == "" || voice.Locale == locale) &&
-			(language == "" || voice.Language == language) {
+		if (criteria.Gender == "" || voice.Gender == criteria.Gender) &&
+			(criteria.Locale == "" || voice.Locale == criteria.Locale) &&
+			(criteria.Language == "" || voice.Language == criteria.Language) {
 			matchingVoices = append(matchingVoices, voice)
 		}
 	}

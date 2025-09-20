@@ -4,7 +4,6 @@ package communicate
 import (
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"sync"
 
@@ -58,8 +57,8 @@ func NewCommunicate(
 		receiveTimeout = 60
 	}
 
-	// Set boundary (default to WordBoundary if not provided)
-	boundaryValue := "WordBoundary"
+	// Set boundary (default to SentenceBoundary if not provided)
+	boundaryValue := "SentenceBoundary"
 	if len(boundary) > 0 && boundary[0] != "" {
 		boundaryValue = boundary[0]
 	}
@@ -253,25 +252,37 @@ func (c *Communicate) Save(ctx context.Context, audioFname string, metadataFname
 	return nil
 }
 
-// StreamToWriter streams the audio to the specified writer.
-func (c *Communicate) StreamToWriter(ctx context.Context, w io.Writer) error {
-	// Stream the audio and metadata
-	chunkChan, errChan := c.Stream(ctx)
+// StreamSync streams audio and metadata synchronously.
+func (c *Communicate) StreamSync() <-chan types.TTSChunk {
+	chunkChan := make(chan types.TTSChunk)
 
-	// Process the chunks
-	for chunk := range chunkChan {
-		if chunk.Type == "audio" {
-			_, err := w.Write(chunk.Data)
-			if err != nil {
-				return err
+	go func() {
+		defer close(chunkChan)
+
+		// Get the async stream
+		asyncChunkChan, errChan := c.Stream(context.Background())
+
+		// Process chunks
+		for {
+			select {
+			case chunk, ok := <-asyncChunkChan:
+				if !ok {
+					return
+				}
+				chunkChan <- chunk
+			case err, ok := <-errChan:
+				if !ok {
+					return
+				}
+				// In sync version, we ignore errors and just close the channel
+				// The caller should handle errors through the async version
+				if err != nil {
+					close(chunkChan)
+					return
+				}
 			}
 		}
-	}
+	}()
 
-	// Check for errors
-	if err := <-errChan; err != nil {
-		return err
-	}
-
-	return nil
+	return chunkChan
 }

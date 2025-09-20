@@ -51,18 +51,9 @@ type CommunicateState struct {
 	StreamWasCalled    bool
 }
 
-// UtilArgs represents the CLI arguments.
-type UtilArgs struct {
-	Text           string
-	File           string
-	Voice          string
-	ListVoices     bool
-	Rate           string
-	Volume         string
-	Pitch          string
-	Boundary       string
-	WordsInCue     int
-	WriteMedia     string
-	WriteSubtitles string
-	Proxy          string
+// VoicesManagerFind represents the criteria for finding voices.
+type VoicesManagerFind struct {
+	Gender   string
+	Locale   string
+	Language string
 }

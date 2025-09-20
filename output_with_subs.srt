@@ -1,0 +1,8 @@
+1
+00:00:00,000 --> 00:00:00,000
+Hello, World!
+
+2
+00:00:00,020 --> 00:00:00,000
+This is an example of how to use the edge-tts-go library with subtitles.
+
