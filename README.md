@@ -2,7 +2,50 @@
 
 `edge-tts-go` is a Go library and command-line tool that allows you to use Microsoft Edge's online text-to-speech service without needing Windows or the Edge browser. This is a Go port of the Python [edge-tts](https://github.com/rany2/edge-tts) package.
 
+## Recent Updates
+
+### v1.0.0 - 2025-09-20
+
+**Major Upgrade**: Synchronized with Python edge-tts v7.2.3
+
+#### 🔄 API & Infrastructure Updates
+- **Updated API Endpoints**: Migrated from legacy `speech.platform.bing.com` to new `api.msedgeservices.com/tts/cognitiveservices` endpoints
+- **Chromium Version**: Updated from 130.0.2849.68 to 140.0.3485.14 to match latest browser compatibility
+- **WebSocket Protocol**: Enhanced WebSocket handling with compression support (equivalent to Python's `compress=15`)
+- **DRM Token Generation**: Improved Sec-MS-GEC token generation with clock skew correction
+
+#### 🎯 Feature Enhancements
+- **Default Boundary**: Changed default boundary from `WordBoundary` to `SentenceBoundary` to match Python v7.2.3 behavior
+- **SubMaker Improvements**: 
+  - Enhanced subtitle generation logic to properly handle SentenceBoundary vs WordBoundary
+  - Added automatic sorting and re-indexing of subtitle cues
+  - Improved timestamp accuracy and formatting
+- **VoicesManager**: Updated `Find()` method to use structured `VoicesManagerFind` criteria
+- **Sync Streaming**: Added `StreamSync()` method for synchronous streaming operations
+
+#### 🛠️ Technical Improvements
+- **Error Handling**: Comprehensive error types matching Python edge-tts exceptions
+- **WebSocket Headers**: Cleaned up and optimized WebSocket connection headers
+- **Code Quality**: Removed unused imports and improved code consistency
+- **Backward Compatibility**: Maintained API compatibility while adding new features
+
+#### 📚 Examples & Documentation
+- **New Example**: Added `examples/with_subtitles/main.go` demonstrating subtitle generation
+- **Updated Documentation**: Refreshed code examples and usage instructions
+
+#### ✅ Testing & Validation
+- All core functionality tested and verified working
+- Audio generation, streaming, and subtitle creation confirmed functional
+- No breaking changes to existing API usage patterns
+
 ## Features
+
+- Convert text to speech using Microsoft Edge's online TTS service
+- List available voices
+- Stream audio data
+- Generate subtitles
+- Command-line interface
+- Asynchronous API
 
 - Convert text to speech using Microsoft Edge's online TTS service
 - List available voices

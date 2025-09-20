@@ -151,7 +151,7 @@ func (vm *VoicesManager) Create(ctx context.Context, customVoices []types.Voice,
 }
 
 // Find finds all matching voices based on the provided attributes.
-func (vm *VoicesManager) Find(criteria VoicesManagerFind) ([]types.VoicesManagerVoice, error) {
+func (vm *VoicesManager) Find(criteria types.VoicesManagerFind) ([]types.VoicesManagerVoice, error) {
 	vm.mu.RLock()
 	defer vm.mu.RUnlock()
 
